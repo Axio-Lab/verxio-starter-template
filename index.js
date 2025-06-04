@@ -7,7 +7,7 @@ const path = require('path');
 const inquirer = require('inquirer');
 
 program
-  .name('create-verxio')
+  .name('create-verxio-starter')
   .description('Create a new Verxio project with pre-installed dependencies and components')
   .argument('[project-name]', 'Name of the project')
   .action(async (projectName) => {

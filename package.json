@@ -1,5 +1,5 @@
 {
-  "name": "verxio-starter",
+  "name": "create-verxio-starter",
   "version": "0.0.1",
   "description": "CLI tool to create a new Verxio project with pre-installed dependencies and components",
   "main": "index.js",
