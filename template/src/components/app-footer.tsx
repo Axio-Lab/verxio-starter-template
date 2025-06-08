@@ -10,7 +10,7 @@ export function AppFooter() {
         target="_blank"
         rel="noopener noreferrer"
       >
-        create-solana-dapp
+        create-verxio-starter
       </a>
     </footer>
   )
