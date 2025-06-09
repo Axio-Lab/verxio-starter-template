@@ -8,37 +8,51 @@ import RevokeLoyaltyPointsForm from '@/components/verxio/RevokeLoyaltyPointsForm
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import Link from 'next/link'
-import { initializeVerxio, VerxioContext } from '@verxioprotocol/core'
-import { signerIdentity, createSignerFromKeypair, KeypairSigner } from '@metaplex-foundation/umi'
-import { createUmi } from '@metaplex-foundation/umi-bundle-defaults'
-import { convertSecretKeyToKeypair } from '@/lib/utils'
+import { VerxioContext, initializeVerxio } from '@verxioprotocol/core'
+import { KeypairSigner } from '@metaplex-foundation/umi'
 import { useWallet } from '@solana/wallet-adapter-react'
-import { createSignerFromWalletAdapter } from '@metaplex-foundation/umi-signer-wallet-adapters'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { useEffect, useState } from 'react'
+import { getKeypair } from '@/lib/actions'
+import { createUmi } from '@metaplex-foundation/umi-bundle-defaults'
+import { createSignerFromWalletAdapter } from '@metaplex-foundation/umi-signer-wallet-adapters'
+import { signerIdentity, createSignerFromKeypair } from '@metaplex-foundation/umi'
 
 export default function PointsPage() {
-  const { wallet } = useWallet()
+  const { wallet, connected } = useWallet()
   const [context, setContext] = useState<VerxioContext | null>(null)
   const [signer, setSigner] = useState<KeypairSigner | null>(null)
 
   useEffect(() => {
-    if (!wallet?.adapter) return
+    async function initializeContext() {
+      if (!wallet?.adapter) return
 
-    const keypair = convertSecretKeyToKeypair(process.env.NEXT_PUBLIC_SECRET_KEY as string)
-    const umi = createUmi('https://api.devnet.solana.com')
-    const newSigner = createSignerFromKeypair(umi, keypair)
+      try {
+        const result = await getKeypair()
+        if (!result.success || !result.keypair) {
+          console.error('Failed to get keypair:', result.error)
+          return
+        }
 
-    // Set up wallet signer
-    const walletSigner = createSignerFromWalletAdapter(wallet.adapter)
-    umi.use(signerIdentity(walletSigner))
-    
-    const newContext = initializeVerxio(umi, newSigner.publicKey)
-    setContext(newContext)
-    setSigner(newSigner)
+        const umi = createUmi('https://api.devnet.solana.com')
+        const newSigner = createSignerFromKeypair(umi, result.keypair)
+
+        // Set up wallet signer
+        const walletSigner = createSignerFromWalletAdapter(wallet.adapter)
+        umi.use(signerIdentity(walletSigner))
+        
+        const newContext = initializeVerxio(umi, newSigner.publicKey)
+        setContext(newContext)
+        setSigner(newSigner)
+      } catch (error) {
+        console.error('Error initializing context:', error)
+      }
+    }
+
+    initializeContext()
   }, [wallet])
 
-  if (!context || !signer) {
+  if (!connected) {
     return (
       <div className="container mx-auto py-8">
         <div className="flex justify-between items-center mb-8">
@@ -54,6 +68,10 @@ export default function PointsPage() {
         </Card>
       </div>
     )
+  }
+
+  if (!context || !signer) {
+    return null
   }
 
   return (
